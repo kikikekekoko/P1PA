@@ -27,13 +27,13 @@ function compressImage(dataUrl) {
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 //  Gemini API 호출 (과부하 시 자동 재시도 3회)
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-async function callGemini({ system, parts, useSearch = true }, retry = 3) {
+async function callGemini({ system, parts }, retry = 3) {
   const body = {
     model: "gemini-2.5-flash",
     system_instruction: { parts: [{ text: system }] },
     contents: [{ role: "user", parts }],
     generationConfig: { temperature: 0.3, maxOutputTokens: 4096 },
-    ...(useSearch && { tools: [{ google_search: {} }] }),
+    // 검색 OFF → 버튼 1번에 ~2원 (검색 ON이면 ~100원)
   };
 
   const res = await fetch("/api/gemini", {
@@ -227,15 +227,15 @@ export default function App() {
     parts.push({ text: `이 제품을 Google 검색으로 충분히 조사한 뒤 JSON으로만 응답하세요.${hintText}` });
 
     try {
-      setStep("🔍 Google 검색으로 제품 조사 중...");
-      const raw1 = await callGemini({ system: PROMPT_GENERATE, parts, useSearch: true });
+      setStep("🔍 제품 분석 중...");
+      const raw1 = await callGemini({ system: PROMPT_GENERATE, parts });
       const parsed = extractJSON(raw1);
       setResult(parsed);
 
       if (parsed.factClaims?.length) {
         setStep("✅ 팩트 체크 중...");
         const fcParts = [{ text: `제품명: ${parsed.productName}\n\n검증할 주장:\n${parsed.factClaims.join("\n")}` }];
-        const raw2 = await callGemini({ system: PROMPT_FACTCHECK, parts: fcParts, useSearch: true });
+        const raw2 = await callGemini({ system: PROMPT_FACTCHECK, parts: fcParts });
         const fcArr = extractJSON(raw2);
         setFc(Array.isArray(fcArr) ? fcArr : []);
       }
