@@ -62,7 +62,7 @@ async function callGemini({ system, parts }, retry = 3) {
         res.status === 429)
     ) {
       await new Promise((r) => setTimeout(r, 4000));
-      return callGemini({ system, parts, useSearch }, retry - 1);
+      return callGemini({ system, parts }, retry - 1);
     }
     throw new Error(errMsg || "API 오류");
   }
