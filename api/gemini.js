@@ -23,7 +23,7 @@ export default async function handler(req, res) {
 
   // 프론트에서 model 필드를 body에 담아 보냄
   const { model, ...geminiBody } = req.body;
-  const modelName = model || "gemini-2.5-flash";
+  const modelName = model || "gemini-2.0-flash";
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`;
 
   try {
