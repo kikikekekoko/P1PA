@@ -5,7 +5,7 @@ import { useState, useRef, useCallback } from "react";
 // ─────────────────────────────────────────────────────────────
 async function callGemini({ systemPrompt, imageParts = [], textPrompt }) {
   const body = {
-    model: "gemini-3-flash-preview",
+    model: "gemini-2.5-flash",
     system_instruction: {
       parts: [{ text: systemPrompt }],
     },
