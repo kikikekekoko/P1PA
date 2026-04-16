@@ -25,9 +25,9 @@ function compressImage(dataUrl) {
 }
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-//  Gemini API 호출
+//  Gemini API 호출 (과부하 시 자동 재시도 3회)
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-async function callGemini({ system, parts, useSearch = true }) {
+async function callGemini({ system, parts, useSearch = true }, retry = 3) {
   const body = {
     model: "gemini-2.5-flash",
     system_instruction: { parts: [{ text: system }] },
@@ -42,7 +42,6 @@ async function callGemini({ system, parts, useSearch = true }) {
     body: JSON.stringify(body),
   });
 
-  // 응답을 텍스트로 먼저 받아서 JSON 파싱 실패 방지
   const text = await res.text();
   let data;
   try {
@@ -51,7 +50,22 @@ async function callGemini({ system, parts, useSearch = true }) {
     throw new Error("서버 응답 오류: " + text.slice(0, 120));
   }
 
-  if (!res.ok) throw new Error(data.error?.message || data.error || "API 오류");
+  const errMsg = data.error?.message || data.error || "";
+
+  // 과부하·503 오류면 4초 대기 후 자동 재시도
+  if (!res.ok) {
+    if (
+      retry > 0 &&
+      (errMsg.includes("high demand") ||
+        errMsg.includes("overloaded") ||
+        res.status === 503 ||
+        res.status === 429)
+    ) {
+      await new Promise((r) => setTimeout(r, 4000));
+      return callGemini({ system, parts, useSearch }, retry - 1);
+    }
+    throw new Error(errMsg || "API 오류");
+  }
 
   const result = (data.candidates?.[0]?.content?.parts ?? [])
     .filter((p) => p.text)
@@ -284,7 +298,7 @@ export default function App() {
             상세페이지 설명 생성기
           </h1>
           <p style={{ margin: 0, fontSize: 11, color: "#aaa" }}>
-            사진 한 장 → 판매 글 자동 완성 + 팩트체크 · Gemini 2.0
+            사진 한 장 → 판매 글 자동 완성 + 팩트체크 · Gemini 2.5
           </p>
         </div>
       </div>
@@ -511,7 +525,7 @@ export default function App() {
         )}
 
         <div style={{ textAlign: "center", fontSize: 11, color: "#ccc" }}>
-          Powered by Gemini 2.0 Flash · 상세페이지 설명 생성기
+          Powered by Gemini 2.5 Flash · 상세페이지 설명 생성기
         </div>
       </div>
     </div>
