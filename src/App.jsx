@@ -29,7 +29,7 @@ function compressImage(dataUrl) {
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 async function callGemini({ system, parts, useSearch = true }) {
   const body = {
-    model: "gemini-2.0-flash",
+    model: "gemini-2.5-flash",
     system_instruction: { parts: [{ text: system }] },
     contents: [{ role: "user", parts }],
     generationConfig: { temperature: 0.3, maxOutputTokens: 4096 },
